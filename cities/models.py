@@ -9,7 +9,7 @@ from .conf import settings
 
 __all__ = [
         'Country', 'Region', 'Subregion',
-        'City', 'District', 'PostalCode', 'AlternativeName', 
+        'City', 'PostalCode', 'AlternativeName',
 ]
 
 @python_2_unicode_compatible
@@ -98,17 +98,6 @@ class City(Place):
     @property
     def parent(self):
         return self.region
-
-class District(Place):
-    name_std = models.CharField(max_length=200, db_index=True, verbose_name="standard name")
-    latitude = models.DecimalField(max_digits=9, decimal_places=6)
-    longitude = models.DecimalField(max_digits=9, decimal_places=6)
-    population = models.IntegerField()
-    city = models.ForeignKey(City)
-
-    @property
-    def parent(self):
-        return self.city
 
 @python_2_unicode_compatible
 class AlternativeName(models.Model):

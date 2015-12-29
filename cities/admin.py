@@ -33,12 +33,6 @@ class CityAdmin(CitiesAdmin):
 
 admin.site.register(City, CityAdmin)
 
-class DistrictAdmin(CitiesAdmin):
-    raw_id_fields = ['alt_names', 'city']
-    list_display = ['name_std', 'city']
-    search_fields = ['name', 'name_std']
-
-admin.site.register(District, DistrictAdmin)
 
 class AltNameAdmin(admin.ModelAdmin):
     ordering = ['name']
