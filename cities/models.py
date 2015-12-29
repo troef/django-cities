@@ -4,12 +4,11 @@ except (NameError, ImportError):
     from django.utils.encoding import force_text
 
 from django.utils.encoding import python_2_unicode_compatible
-from django.contrib.gis.db import models
-from django.contrib.gis.geos import Point
+from django.db import models
 from .conf import settings
 
 __all__ = [
-        'Point', 'Country', 'Region', 'Subregion',
+        'Country', 'Region', 'Subregion',
         'City', 'District', 'PostalCode', 'AlternativeName', 
 ]
 
@@ -18,8 +17,6 @@ class Place(models.Model):
     name = models.CharField(max_length=200, db_index=True, verbose_name="ascii name")
     slug = models.CharField(max_length=200)
     alt_names = models.ManyToManyField('AlternativeName')
-
-    objects = models.GeoManager()
 
     class Meta:
         abstract = True
@@ -85,7 +82,8 @@ class Subregion(Place):
 
 class City(Place):
     name_std = models.CharField(max_length=200, db_index=True, verbose_name="standard name")
-    location = models.PointField()
+    latitude = models.DecimalField(max_digits=9, decimal_places=6)
+    longitude = models.DecimalField(max_digits=9, decimal_places=6)
     population = models.IntegerField()
     region = models.ForeignKey(Region, null=True, blank=True)
     subregion = models.ForeignKey(Subregion, null=True, blank=True)
@@ -103,7 +101,8 @@ class City(Place):
 
 class District(Place):
     name_std = models.CharField(max_length=200, db_index=True, verbose_name="standard name")
-    location = models.PointField()
+    latitude = models.DecimalField(max_digits=9, decimal_places=6)
+    longitude = models.DecimalField(max_digits=9, decimal_places=6)
     population = models.IntegerField()
     city = models.ForeignKey(City)
 
@@ -125,7 +124,8 @@ class AlternativeName(models.Model):
 @python_2_unicode_compatible
 class PostalCode(Place):
     code = models.CharField(max_length=20)
-    location = models.PointField()
+    latitude = models.DecimalField(max_digits=9, decimal_places=6)
+    longitude = models.DecimalField(max_digits=9, decimal_places=6)
 
     country = models.ForeignKey(Country, related_name = 'postal_codes')
 
@@ -133,8 +133,6 @@ class PostalCode(Place):
     region_name = models.CharField(max_length=100, db_index=True)
     subregion_name = models.CharField(max_length=100, db_index=True)
     district_name = models.CharField(max_length=100, db_index=True)
-
-    objects = models.GeoManager()
 
     @property
     def parent(self):
