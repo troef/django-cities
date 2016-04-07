@@ -387,77 +387,79 @@ class Command(BaseCommand):
             child_id = int(item['child'])
             self.hierarchy[child_id] = parent_id
             
-    #def import_district(self):
-    #    uptodate = self.download_once('city')
-    #    if uptodate and not self.force: return
-    #
-    #    data = self.get_data('city')
-#
-    #    self.build_country_index()
-    #    self.build_region_index()
-    #    self.build_hierarchy()
-    #
-    #    self.logger.info("Building city index")
-    #    city_index = {}
-    #    for obj in City.objects.all():
-    #        city_index[obj.id] = obj
-    #
-    #    self.logger.info("Importing district data")
-    #    for item in data:
-    #        if not self.call_hook('district_pre', item): continue
-    #
-    #        type = item['featureCode']
-    #        if type not in district_types: continue
-    #
-    #        district = District()
-    #        district.name = item['name']
-    #        district.name_std = item['asciiName']
-    #        district.slug = slugify(district.name_std)
-    #        district.longitude = float(item['longitude'])
-    #        district.latitude = float(item['latitude'])
-#
-    #        district.population = int(item['population'])
-    #
-    #        # Find city
-    #        city = None
-    #        try:
-    #            city = city_index[self.hierarchy[district.id]]
-    #        except:
-    #            self.logger.warning("District: %s: Cannot find city in hierarchy, using nearest", district.name)
-    #            city_pop_min = 100000
-    #            # we are going to try to find closet city using native
-    #            # database .distance(...) query but if that fails then
-    #            # we fall back to degree search, MYSQL has no support
-    #            # and Spatialite with SRID 4236.
-    #            try:
-    #                city = City.objects.filter(population__gt=city_pop_min).distance(
-    #                    district.location).order_by('distance')[0]
-    #            except:
-    #                self.logger.warning(
-    #                    "District: %s: DB backend does not support native '.distance(...)' query "
-    #                    "falling back to two degree search",
-    #                    district.name
-    #                )
-    #                search_deg = 2
-    #                min_dist = float('inf')
-    #                bounds = Envelope(district.location.x-search_deg, district.location.y-search_deg,
-    #                                  district.location.x+search_deg, district.location.y+search_deg)
-    #                for e in City.objects.filter(population__gt=city_pop_min).filter(
-    #                        location__intersects=bounds.wkt):
-    #                    dist = geo_distance(district.location, e.location)
-    #                    if dist < min_dist:
-    #                        min_dist = dist
-    #                        city = e
-    #
-    #        if not city:
-    #            self.logger.warning("District: %s: Cannot find city -- skipping", district.name)
-    #            continue
-#
-    #        district.city = city
-    #
-    #        if not self.call_hook('district_post', district, item): continue
-    #        district.save()
-    #        self.logger.debug("Added district: %s", district)
+    def import_district(self):
+        uptodate = self.download_once('city')
+        if uptodate and not self.force: return
+
+        data = self.get_data('city')
+
+        self.build_country_index()
+        self.build_region_index()
+        self.build_hierarchy()
+
+        self.logger.info("Building city index")
+        city_index = {}
+        for obj in City.objects.all():
+            city_index[obj.id] = obj
+
+        self.logger.info("Importing district data")
+        for item in data:
+            if not self.call_hook('district_pre', item): continue
+
+            type = item['featureCode']
+            if type not in district_types: continue
+
+            district = District()
+            district.name = item['name']
+            district.name_std = item['asciiName']
+            district.slug = slugify(district.name_std)
+            district.longitude = float(item['longitude'])
+            district.latitude = float(item['latitude'])
+
+            district.population = int(item['population'])
+
+            # Find city
+            city = None
+            try:
+                city = city_index[self.hierarchy[district.id]]
+            except:
+                pass # We cannot use nearest locating since we removed spation functions
+
+                #self.logger.warning("District: %s: Cannot find city in hierarchy, using nearest", district.name)
+                #city_pop_min = 100000
+                ## we are going to try to find closet city using native
+                ## database .distance(...) query but if that fails then
+                ## we fall back to degree search, MYSQL has no support
+                ## and Spatialite with SRID 4236.
+                #try:
+                #    city = City.objects.filter(population__gt=city_pop_min).distance(
+                #        district.location).order_by('distance')[0]
+                #except:
+                #    self.logger.warning(
+                #        "District: %s: DB backend does not support native '.distance(...)' query "
+                #        "falling back to two degree search",
+                #        district.name
+                #    )
+                #    search_deg = 2
+                #    min_dist = float('inf')
+                #    bounds = Envelope(district.location.x-search_deg, district.location.y-search_deg,
+                #                      district.location.x+search_deg, district.location.y+search_deg)
+                #    for e in City.objects.filter(population__gt=city_pop_min).filter(
+                #            location__intersects=bounds.wkt):
+                #        dist = geo_distance(district.location, e.location)
+                #        if dist < min_dist:
+                #            min_dist = dist
+                #            city = e
+
+            if not city:
+                self.logger.warning("District: %s: Cannot find city -- skipping", district.name)
+                continue
+
+            district.city = city
+
+            if not self.call_hook('district_post', district, item): continue
+            district.save()
+            self.logger.debug("Added district: %s", district)
         
     def import_alt_name(self):
         uptodate = self.download('alt_name')
